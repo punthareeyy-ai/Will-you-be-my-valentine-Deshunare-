@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>💘 Deshunare, Will You Be My Valentine?</title>
+
+  <style>
+    body {
+      background-color: #ffe6f0;
+      font-family: "Comic Sans MS", "Poppins", cursive;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    .container {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .card {
+      background: white;
+      padding: 45px;
+      border-radius: 30px;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+      z-index: 2;
+    }
+
+    h1 {
+      color: #ff4d88;
+      font-size: 2.6rem;
+    }
+
+    p {
+      font-size: 1.3rem;
+      color: #444;
+    }
+
+    button {
+      font-size: 1.3rem;
+      padding: 14px 30px;
+      margin: 15px;
+      border-radius: 35px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    button:hover {
+      transform: scale(1.1);
+    }
+
+    #yes {
+      background-color: #ff4d88;
+      color: white;
+    }
+
+    #no {
+      background-color: #ccc;
+      position: absolute;
+    }
+
+    /* floating hearts */
+    .heart {
+      position: fixed;
+      bottom: -20px;
+      font-size: 24px;
+      animation: floatUp 6s linear infinite;
+      opacity: 0.8;
+      z-index: 1;
+    }
+
+    @keyframes floatUp {
+      from {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateY(-110vh);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- optional background music 🎵 -->
+  <audio autoplay loop>
+    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+  </audio>
+
+  <div class="container">
+    <div class="card">
+      <h1>💘 Deshunare, will you be my Valentine? 💘</h1>
+      <p>No pressure but also yes pressure 😌💖✨🐻</p>
+
+      <button id="yes" onclick="yesClicked()">YES 💕🥰</button>
+      <button id="no" onmouseover="moveNo()">NO 🙃</button>
+    </div>
+  </div>
+
+  <script>
+    // NO button runs away 😈
+    function moveNo() {
+      const noBtn = document.getElementById("no");
+      const x = Math.random() * (window.innerWidth - 120);
+      const y = Math.random() * (window.innerHeight - 120);
+      noBtn.style.left = x + "px";
+      noBtn.style.top = y + "px";
+    }
+
+    // YES = eternal happiness 💖
+    function yesClicked() {
+      document.body.innerHTML = `
+        <div style="
+          background-color:#ffe6f0;
+          height:100vh;
+          display:flex;
+          flex-direction:column;
+          justify-content:center;
+          align-items:center;
+          text-align:center;
+          font-family:'Comic Sans MS', cursive;
+        ">
+          <h1 style="color:#ff4d88;">YAYYYY 😭💘✨</h1>
+          <p style="font-size:1.8rem;">Thank you so much for being my Valentine 💐🥰</p>
+          <p>I love you sooo much bb💕🐻💞</p>
+          <p>Lemme give you some kissy hehe💋</p>
+        </div>
+      `;
+    }
+
+    // floating hearts 💖💖💖
+    function createHeart() {
+      const heart = document.createElement("div");
+      heart.className = "heart";
+      heart.innerText = "💖";
+      heart.style.left = Math.random() * 100 + "vw";
+      heart.style.animationDuration = (Math.random() * 3 + 4) + "s";
+      document.body.appendChild(heart);
+
+      setTimeout(() => {
+        heart.remove();
+      }, 6000);
+    }
+
+    setInterval(createHeart, 350);
+  </script>
+
+</body>
+</html>
