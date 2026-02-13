@@ -1,41 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>💘 Deshunare, Will You Be My Valentine?</title>
+  <meta charset="UTF-8" />
+  <title>🐈‍⬛ Valentine Quest</title>
 
   <style>
     body {
-      background-color: #ffe6f0;
-      font-family: "Comic Sans MS", "Poppins", cursive;
       margin: 0;
-      overflow: hidden;
-    }
-
-    .container {
-      height: 100vh;
+      background: linear-gradient(#cce7ff, #ffe6f0);
+      font-family: "Comic Sans MS", cursive;
       display: flex;
       justify-content: center;
       align-items: center;
-      text-align: center;
+      height: 100vh;
+      overflow: hidden;
     }
 
-    .card {
-      background: white;
-      padding: 45px;
-      border-radius: 30px;
-      box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+    canvas {
+      border-radius: 20px;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.25);
       z-index: 2;
     }
 
-    h1 {
+    .hint {
+      position: absolute;
+      top: 15px;
+      font-size: 1.1rem;
       color: #ff4d88;
-      font-size: 2.6rem;
+      z-index: 3;
     }
 
-    p {
-      font-size: 1.3rem;
-      color: #444;
+    .valentine {
+      display: none;
+      position: relative;
+      text-align: center;
+      z-index: 4;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 30px 40px 60px;
+      border-radius: 25px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      min-width: 320px;
+      min-height: 240px;
     }
 
     button {
@@ -45,110 +50,217 @@
       border-radius: 35px;
       border: none;
       cursor: pointer;
-      transition: transform 0.2s;
     }
 
-    button:hover {
-      transform: scale(1.1);
-    }
+    #yes { background-color: #ff4d88; color: white; }
+    #no  { background-color: #ccc; position: absolute; }
 
-    #yes {
-      background-color: #ff4d88;
-      color: white;
-    }
-
-    #no {
-      background-color: #ccc;
-      position: absolute;
-    }
-
-    /* floating hearts */
-    .heart {
+    .petal {
       position: fixed;
-      bottom: -20px;
-      font-size: 24px;
-      animation: floatUp 6s linear infinite;
-      opacity: 0.8;
+      top: -20px;
+      font-size: 20px;
+      animation: fall linear infinite;
+      opacity: 0.85;
       z-index: 1;
     }
 
-    @keyframes floatUp {
-      from {
-        transform: translateY(0);
-        opacity: 1;
-      }
-      to {
-        transform: translateY(-110vh);
-        opacity: 0;
-      }
+    @keyframes fall {
+      from { transform: translateY(0) rotate(0deg); }
+      to   { transform: translateY(110vh) rotate(360deg); }
     }
   </style>
 </head>
 
 <body>
 
-  <!-- optional background music 🎵 -->
-  <audio autoplay loop>
-    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
-  </audio>
+<audio id="bgm" loop>
+  <source src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Wallpaper.mp3" type="audio/mpeg">
+</audio>
 
-  <div class="container">
-    <div class="card">
-      <h1>💘 Deshunare, will you be my Valentine? 💘</h1>
-      <p>No pressure but also yes pressure 😌💖✨🐻</p>
+<div class="hint">⬅️ ➡️ Move | ⬆️ / Space Jump</div>
 
-      <button id="yes" onclick="yesClicked()">YES 💕🥰</button>
-      <button id="no" onmouseover="moveNo()">NO 🙃</button>
-    </div>
-  </div>
+<canvas id="game" width="380" height="620"></canvas>
 
-  <script>
-    // NO button runs away 😈
-    function moveNo() {
-      const noBtn = document.getElementById("no");
-      const x = Math.random() * (window.innerWidth - 120);
-      const y = Math.random() * (window.innerHeight - 120);
-      noBtn.style.left = x + "px";
-      noBtn.style.top = y + "px";
+<div class="valentine" id="valentine">
+  <h1>💘 Will you be my Valentine, Deshunare? 💘</h1>
+  <p>You climbed all this way… you cannot escape 😌🐻</p>
+  <button id="yes" onclick="yesClicked()">YES 💕🥰</button>
+  <button id="no">NO 🙃</button>
+</div>
+
+<script>
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const music = document.getElementById("bgm");
+
+  let musicStarted = false;
+  function startMusic() {
+    if (!musicStarted) {
+      music.play().catch(() => {});
+      musicStarted = true;
     }
+  }
 
-    // YES = eternal happiness 💖
-    function yesClicked() {
-      document.body.innerHTML = `
-        <div style="
-          background-color:#ffe6f0;
-          height:100vh;
-          display:flex;
-          flex-direction:column;
-          justify-content:center;
-          align-items:center;
-          text-align:center;
-          font-family:'Comic Sans MS', cursive;
-        ">
-          <h1 style="color:#ff4d88;">YAYYYY 😭💘✨</h1>
-          <p style="font-size:1.8rem;">Thank you so much for being my Valentine 💐🥰</p>
-          <p>I love you sooo much bb💕🐻💞</p>
-          <p>Lemme give you some kissy hehe💋</p>
-        </div>
-      `;
+  let cat = { x: 180, y: 560, w: 28, h: 28, vx: 0, vy: 0 };
+  let isGrounded = false;
+
+  const gravity = 0.6;
+  const jumpPower = -12;
+  const speed = 4;
+  const keys = {};
+
+  const clouds = [
+    { x: 40, y: 80, r: 30 },
+    { x: 200, y: 120, r: 40 },
+    { x: 320, y: 60, r: 25 }
+  ];
+
+  const platforms = [
+    { x: 90,  y: 590, w: 200, h: 10 },
+    { x: 40,  y: 520, w: 120, h: 10 },
+    { x: 220, y: 480, w: 120, h: 10 },
+    { x: 80,  y: 430, w: 120, h: 10 },
+    { x: 200, y: 380, w: 120, h: 10 },
+    { x: 50,  y: 330, w: 140, h: 10 },
+    { x: 210, y: 280, w: 120, h: 10 },
+    { x: 90,  y: 230, w: 140, h: 10 },
+    { x: 180, y: 180, w: 120, h: 10 }
+  ];
+
+  function drawBackground() {
+    const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    sky.addColorStop(0, "#b3ddff");
+    sky.addColorStop(1, "#ffe6f0");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "#c1c7e5";
+    ctx.beginPath();
+    ctx.moveTo(0, 450);
+    ctx.lineTo(80, 350);
+    ctx.lineTo(160, 450);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(120, 450);
+    ctx.lineTo(240, 330);
+    ctx.lineTo(360, 450);
+    ctx.fill();
+
+    ctx.fillStyle = "#b3e5cc";
+    ctx.beginPath();
+    ctx.arc(80, 650, 200, Math.PI, Math.PI * 2);
+    ctx.arc(300, 650, 260, Math.PI, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,0.8)";
+    clouds.forEach(c => {
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      ctx.arc(c.x + 25, c.y + 10, c.r - 5, 0, Math.PI * 2);
+      ctx.arc(c.x - 25, c.y + 10, c.r - 10, 0, Math.PI * 2);
+      ctx.fill();
+      c.x += 0.1;
+      if (c.x > canvas.width + 50) c.x = -50;
+    });
+  }
+
+  function drawPlatforms() {
+    ctx.fillStyle = "#ffb3c6";
+    platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, p.h));
+  }
+
+  function drawCat() {
+    ctx.font = "28px 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji'";
+    ctx.fillText("🐈‍⬛", cat.x, cat.y + 28);
+  }
+
+  function update() {
+    drawBackground();
+
+    if (keys["ArrowLeft"]) cat.vx = -speed;
+    else if (keys["ArrowRight"]) cat.vx = speed;
+    else cat.vx = 0;
+
+    cat.x += cat.vx;
+    cat.vy += gravity;
+    cat.y += cat.vy;
+
+    isGrounded = false;
+
+    platforms.forEach(p => {
+      if (
+        cat.x < p.x + p.w &&
+        cat.x + cat.w > p.x &&
+        cat.y + cat.h <= p.y + 10 &&
+        cat.y + cat.h + cat.vy >= p.y
+      ) {
+        cat.vy = 0;
+        cat.y = p.y - cat.h;
+        isGrounded = true;
+      }
+    });
+
+    if (cat.y < 160) finishGame();
+
+    drawPlatforms();
+    drawCat();
+    requestAnimationFrame(update);
+  }
+
+  function jump() {
+    startMusic();
+    if (isGrounded) {
+      cat.vy = jumpPower;
+      isGrounded = false;
     }
+  }
 
-    // floating hearts 💖💖💖
-    function createHeart() {
-      const heart = document.createElement("div");
-      heart.className = "heart";
-      heart.innerText = "💖";
-      heart.style.left = Math.random() * 100 + "vw";
-      heart.style.animationDuration = (Math.random() * 3 + 4) + "s";
-      document.body.appendChild(heart);
+  document.addEventListener("keydown", e => {
+    keys[e.code] = true;
+    if (e.code === "Space" || e.code === "ArrowUp") jump();
+  });
 
-      setTimeout(() => {
-        heart.remove();
-      }, 6000);
-    }
+  document.addEventListener("keyup", e => keys[e.code] = false);
+  document.addEventListener("touchstart", jump);
 
-    setInterval(createHeart, 350);
-  </script>
+  function finishGame() {
+    canvas.style.display = "none";
+    document.querySelector(".hint").style.display = "none";
+    document.getElementById("valentine").style.display = "block";
+    enableNoEscape();
+  }
+
+  function createPetal() {
+    const petal = document.createElement("div");
+    petal.className = "petal";
+    petal.innerText = "🌸";
+    petal.style.left = Math.random() * 100 + "vw";
+    petal.style.animationDuration = Math.random() * 5 + 6 + "s";
+    document.body.appendChild(petal);
+    setTimeout(() => petal.remove(), 11000);
+  }
+  setInterval(createPetal, 400);
+
+  function enableNoEscape() {
+    const noBtn = document.getElementById("no");
+    const box = document.getElementById("valentine");
+    noBtn.addEventListener("mousemove", () => {
+      noBtn.style.left = Math.random() * (box.clientWidth - noBtn.offsetWidth) + "px";
+      noBtn.style.top  = Math.random() * (box.clientHeight - noBtn.offsetHeight) + "px";
+    });
+  }
+
+  function yesClicked() {
+    document.getElementById("valentine").innerHTML = `
+      <h1 style="color:#ff4d88;">YAYYYY 😭💘✨</h1>
+      <p style="font-size:1.6rem;">You’re officially my Valentine, Deshunare 💐🥰</p>
+      <p>I love you sooo much 💕🐻💞</p>
+    `;
+  }
+
+  update();
+</script>
 
 </body>
 </html>
